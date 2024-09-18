@@ -8,6 +8,8 @@ export default class PetController {
 
     let available = true;
 
+    const images = req.files;
+
     if (!name) {
       res.status(422).json({ message: "O nome é obrigatório" });
       return;
@@ -24,12 +26,15 @@ export default class PetController {
       res.status(422).json({ message: "A cor é obrigatória" });
       return;
     }
+    if (images.length === 0) {
+      res.status(422).json({ message: "A imagem é obrigatória" });
+      return;
+    }
 
     const token = await getToken(req);
     const user = await getUserByToken(token);
 
     console.log(user);
-    
 
     const pet = new Pet({
       name,
@@ -46,11 +51,20 @@ export default class PetController {
       },
     });
 
+    images.map((image) => {
+      pet.images.push(image.filename);
+    });
+
     try {
       const newPet = await pet.save();
       res.status(200).json({ message: "Pet cadastrado com sucesso", newPet });
     } catch (error) {
       res.status(500).json({ message: error });
     }
+  }
+  static async getAll(req, res) {
+    const pets = await Pet.find().sort("-createdAt");
+
+    res.status(200).json({ pets: pets });
   }
 }
